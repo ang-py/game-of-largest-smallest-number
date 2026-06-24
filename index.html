@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #f0f4ff; color: #1a1a3a; }
+.screen { display: none; padding: 1rem 0; }
+.screen.active { display: block; }
+.setup-card { background: #fff; border: 2px solid #c7d4ff; border-radius: 18px; padding: 1.8rem; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 20px rgba(80,100,220,0.10); }
+.setup-card h2 { font-size: 20px; color: #2a3a9a; margin-bottom: 0.3rem; text-align: center; }
+.setup-subtitle { font-size: 13px; color: #7a8ab0; text-align: center; margin-bottom: 1.4rem; }
+.setup-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.1rem; }
+.setup-row label { font-size: 13px; font-weight: 600; color: #4a5aa0; }
+.setup-row .opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt-btn { padding: 7px 16px; border-radius: 8px; border: 2px solid #c7d4ff; background: #f0f4ff; color: #4a5aa0; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.opt-btn:hover { background: #dde6ff; border-color: #7a9aff; }
+.opt-btn.sel { background: #3a52c4; border-color: #3a52c4; color: #fff; }
+.start-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3a52c4; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 0.5rem; box-shadow: 0 3px 10px rgba(58,82,196,0.25); transition: background .15s; }
+.start-btn:hover { background: #2a40b0; }
+.game-wrap { max-width: 540px; margin: 0 auto; }
+.game-header { background: #fff; border: 2px solid #c7d4ff; border-radius: 14px; padding: 0.9rem 1.2rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(80,100,220,0.07); }
+.game-title { font-size: 15px; font-weight: 700; color: #2a3a9a; }
+.game-meta { font-size: 12px; color: #7a8ab0; margin-top: 2px; }
+.new-game-btn { padding: 7px 14px; border-radius: 8px; border: 2px solid #c7d4ff; background: #f0f4ff; color: #4a5aa0; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.new-game-btn:hover { background: #dde6ff; }
+.player-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+.player-tab { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid #c7d4ff; background: #f0f4ff; color: #7a8ab0; font-size: 13px; font-weight: 700; text-align: center; }
+.player-tab.active { background: #3a52c4; border-color: #3a52c4; color: #fff; }
+.player-tab.p2.active { background: #e85d04; border-color: #e85d04; color: #fff; }
+.slots-section { background: #fff; border: 2px solid #c7d4ff; border-radius: 14px; padding: 1rem 1rem 1.1rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(80,100,220,0.07); }
+.slots-label { font-size: 12px; font-weight: 600; color: #7a8ab0; margin-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: .5px; }
+.slots-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+#slotsDouble { display: flex; }
+.slot { width: 64px; height: 76px; border-radius: 12px; border: 2.5px dashed #b0c0f0; background: #f5f8ff; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all .15s; }
+.slot.filled { border-style: solid; border-color: #3a52c4; background: #eef1ff; }
+.slot.clickable { border-color: #3a52c4; background: #e8edff; cursor: pointer; animation: slotpulse 0.9s ease-in-out infinite alternate; }
+.slot.clickable:hover { background: #d8e2ff; transform: scale(1.06); }
+@keyframes slotpulse { from { border-color: #3a52c4; box-shadow: none; } to { border-color: #7090f0; box-shadow: 0 0 10px rgba(100,130,255,0.3); } }
+.slot-digit { font-size: 28px; font-weight: 800; color: #2a3a9a; line-height: 1; }
+.slot-empty-icon { font-size: 22px; color: #b0c0f0; }
+.slot-pos { font-size: 10px; color: #a0b0d0; margin-top: 4px; font-weight: 600; }
+.slot.filled .slot-pos { color: #5a72d4; }
+.dice-section { background: #fff; border: 2px solid #c7d4ff; border-radius: 14px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(80,100,220,0.07); }
+.dice-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 0.8rem; flex-wrap: wrap; }
+.dice-controls label { font-size: 13px; font-weight: 600; color: #4a5aa0; }
+.dice-controls input[type=number] { width: 56px; padding: 6px 8px; border-radius: 8px; border: 2px solid #c7d4ff; background: #f5f8ff; color: #2a3a9a; font-size: 14px; font-weight: 600; }
+.roll-btn { padding: 0 22px; height: 38px; border-radius: 9px; border: none; background: #e85d04; color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 3px 8px rgba(232,93,4,0.30); transition: background .15s; }
+.roll-btn:hover:not(:disabled) { background: #c94e00; }
+.roll-btn:disabled { background: #d0d8f0; color: #a0aac0; cursor: not-allowed; box-shadow: none; }
+.dice-tray { display: flex; flex-wrap: wrap; gap: 10px; min-height: 90px; align-items: center; justify-content: center; }
+.die-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.die-slot canvas { border-radius: 8px; display: block; cursor: pointer; border: 3px solid transparent; transition: border-color .15s, transform .15s; }
+.die-val-lbl { font-size: 12px; color: #3a52c4; font-weight: 800; }
+.assign-panel { background: #eef2ff; border: 2px solid #c7d4ff; border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 13px; color: #4a5aa0; min-height: 44px; line-height: 1.6; }
+.assign-panel b { color: #2a3a9a; }
+.result-card { background: #fff; border: 2px solid #c7d4ff; border-radius: 16px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; box-shadow: 0 4px 18px rgba(80,100,220,0.10); }
+.result-card h3 { font-size: 17px; color: #2a3a9a; margin-bottom: 1rem; }
+.result-winner { font-size: 22px; font-weight: 800; margin-bottom: 0.5rem; color: #2a3a9a; }
+.result-numbers { display: flex; gap: 2rem; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.result-num .lbl { font-size: 12px; color: #7a8ab0; font-weight: 600; margin-bottom: 4px; }
+.result-num .val { font-size: 40px; font-weight: 800; letter-spacing: 4px; }
+.result-num .val.p1color { color: #3a52c4; }
+.result-num .val.p2color { color: #e85d04; }
+.result-num .val.bestcolor { color: #16a34a; }
+.result-diff { font-size: 14px; color: #4a5aa0; margin-bottom: 1.1rem; }
+.result-diff .highlight { color: #e85d04; font-weight: 800; font-size: 16px; }
+.play-again-btn { padding: 10px 28px; border-radius: 10px; border: none; background: #3a52c4; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 3px 10px rgba(58,82,196,0.25); }
+.play-again-btn:hover { background: #2a40b0; }
+.hist-section { background: #fff; border: 2px solid #c7d4ff; border-radius: 14px; padding: 1rem; box-shadow: 0 2px 8px rgba(80,100,220,0.07); }
+.hist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.hist-title { font-size: 13px; font-weight: 700; color: #4a5aa0; }
+.hist-list { display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; }
+.hist-item { display: flex; align-items: center; gap: 8px; background: #f5f8ff; border: 1px solid #d8e2ff; border-radius: 7px; padding: 5px 10px; font-size: 12px; color: #4a5aa0; }
+.hist-num { color: #a0b0d0; min-width: 22px; font-weight: 600; }
+.hist-dice { flex: 1; color: #2a3a9a; font-weight: 700; }
+.hist-empty { color: #a0b0d0; font-size: 13px; text-align: center; padding: 1rem 0; }
+.hist-reset-btn { padding: 4px 10px; border-radius: 7px; border: 2px solid #c7d4ff; background: #f0f4ff; color: #7a8ab0; font-size: 11px; font-weight: 600; cursor: pointer; }
+.hist-reset-btn:hover { background: #dde6ff; }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="setupScreen">
+  <div class="setup-card">
+    <h2>🎲 Largest/Smallest Number Wins</h2>
+    <p class="setup-subtitle">Roll dice and place digits to build your number!</p>
+
+    <div class="setup-row">
+      <label>Objective</label>
+      <div class="opts" id="opts-obj">
+        <button class="opt-btn sel" data-obj="largest">🔺 Largest number</button>
+        <button class="opt-btn" data-obj="smallest">🔻 Smallest number</button>
+      </div>
+    </div>
+
+    <div class="setup-row">
+      <label>Number of digit slots</label>
+      <div class="opts" id="opts-digits">
+        <button class="opt-btn" data-digits="2">2</button>
+        <button class="opt-btn" data-digits="3">3</button>
+        <button class="opt-btn" data-digits="4">4</button>
+        <button class="opt-btn sel" data-digits="5">5</button>
+        <button class="opt-btn" data-digits="6">6</button>
+      </div>
+    </div>
+
+    <div class="setup-row">
+      <label>Players</label>
+      <div class="opts" id="opts-players">
+        <button class="opt-btn sel" data-players="1">👤 1 Player</button>
+        <button class="opt-btn" data-players="2">👥 2 Players</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="startBtn">▶ Start Game</button>
+  </div>
+</div>
+
+<div class="screen" id="gameScreen">
+  <div class="game-wrap">
+
+    <div class="player-tabs" id="playerTabs" style="display:none">
+      <div class="player-tab active" id="tab1">👤 Player 1</div>
+      <div class="player-tab p2" id="tab2">👥 Player 2</div>
+    </div>
+
+    <div class="game-header">
+      <div>
+        <div class="game-title" id="gameTitle"></div>
+        <div class="game-meta" id="gameMeta"></div>
+      </div>
+      <button class="new-game-btn" id="newGameBtn">↩ New Game</button>
+    </div>
+
+    <div class="slots-section">
+      <div id="slotsLabel" class="slots-label">Your number — place each rolled digit into a slot</div>
+      <div id="slotsDouble" style="display:none; gap:1rem; justify-content:center;">
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:11px;font-weight:700;color:#3a52c4;text-align:center;margin-bottom:6px;">👤 PLAYER 1</div>
+          <div class="slots-row" id="slotsRow1"></div>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:11px;font-weight:700;color:#e85d04;text-align:center;margin-bottom:6px;">👥 PLAYER 2</div>
+          <div class="slots-row" id="slotsRow2"></div>
+        </div>
+      </div>
+      <div class="slots-row" id="slotsRow"></div>
+    </div>
+
+    <div class="dice-section">
+      <div class="dice-controls">
+        <label>Dice to roll</label>
+        <input type="number" id="rollCount" min="1" max="5" value="1">
+        <button class="roll-btn" id="rollBtn">🎲 Roll!</button>
+      </div>
+      <div class="dice-tray" id="diceTray">
+        <span style="font-size:13px;color:#a0b0d0">Press Roll to throw your dice</span>
+      </div>
+    </div>
+
+    <div class="assign-panel" id="assignPanel">Choose how many dice to roll, then press Roll!</div>
+
+    <div id="resultCard" style="display:none"></div>
+
+    <div class="hist-section">
+      <div class="hist-header">
+        <span class="hist-title">Roll history</span>
+        <button class="hist-reset-btn" id="histResetBtn">🗑 Reset</button>
+      </div>
+      <div class="hist-list" id="histList"><div class="hist-empty">No rolls yet</div></div>
+    </div>
+
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  // ── 3D Die Engine ──────────────────────────────────────────────────────────
+
+  function buildD10Geometry() {
+    const PI2 = Math.PI * 2;
+    const RU = 0.85, YU = 0.27, RL = 0.85, YL = -0.27;
+    const topPole = [0, 1.05, 0], botPole = [0, -1.05, 0];
+    const upper = [], lower = [];
+    for (let i = 0; i < 5; i++) {
+      const au = (i / 5) * PI2 - Math.PI / 2;
+      const al = au + Math.PI / 5;
+      upper.push([Math.cos(au) * RU, YU, Math.sin(au) * RU]);
+      lower.push([Math.cos(al) * RL, YL, Math.sin(al) * RL]);
+    }
+    const positions = [], normals = [], uvs = [];
+    function addTriangle(a, b, c) {
+      const ab = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+      const ac = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
+      const nx = ab[1]*ac[2] - ab[2]*ac[1];
+      const ny = ab[2]*ac[0] - ab[0]*ac[2];
+      const nz = ab[0]*ac[1] - ab[1]*ac[0];
+      const l = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+      const n = [nx/l, ny/l, nz/l];
+      for (const p of [a, b, c]) { positions.push(...p); normals.push(...n); uvs.push(0, 0); }
+    }
+    function addQuad(a, b, c, d) { addTriangle(a, b, c); addTriangle(a, c, d); }
+    for (let i = 0; i < 5; i++) {
+      const ni = (i + 1) % 5;
+      addQuad(topPole, upper[i], lower[i], upper[ni]);
+      addQuad(botPole, lower[ni], upper[ni], lower[i]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    return geo;
+  }
+
+  const FACE_DIGITS = [0, 2, 4, 6, 8, 9, 7, 5, 3, 1];
+
+  function faceCenter(i) {
+    const PI2 = Math.PI * 2;
+    const RU = 0.85, YU = 0.27, RL = 0.85, YL = -0.27;
+    const upper = [], lower = [];
+    for (let k = 0; k < 5; k++) {
+      const au = (k / 5) * PI2 - Math.PI / 2;
+      const al = au + Math.PI / 5;
+      upper.push(new THREE.Vector3(Math.cos(au) * RU, YU, Math.sin(au) * RU));
+      lower.push(new THREE.Vector3(Math.cos(al) * RL, YL, Math.sin(al) * RL));
+    }
+    const tp = new THREE.Vector3(0, 1.05, 0), bp = new THREE.Vector3(0, -1.05, 0);
+    let pts;
+    if (i < 5) { const ni = (i + 1) % 5; pts = [tp, upper[i], lower[i], upper[ni]]; }
+    else { const j = i - 5, ni = (j + 1) % 5; pts = [bp, lower[ni], upper[ni], lower[j]]; }
+    const c = new THREE.Vector3();
+    pts.forEach(p => c.add(p));
+    c.divideScalar(pts.length);
+    return c.normalize();
+  }
+
+  const FACE_CENTERS = Array.from({ length: 10 }, (_, i) => faceCenter(i));
+
+  function rotationForDigit(digit) {
+    const fi = FACE_DIGITS.indexOf(digit);
+    const fc = FACE_CENTERS[fi].clone();
+    const up = new THREE.Vector3(0, 1, 0);
+    const q = new THREE.Quaternion().setFromUnitVectors(fc, up);
+    const tilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.18);
+    return tilt.multiply(q);
+  }
+
+  const DIE_SIZE = 110;
+
+  class DieRenderer {
+    constructor() {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setSize(DIE_SIZE, DIE_SIZE);
+      this.renderer.shadowMap.enabled = true;
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
+      this.camera.position.set(0.35, -0.3, 4.2);
+      this.scene.add(new THREE.AmbientLight(0x8899cc, 0.55));
+      const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+      dir.position.set(1.5, 2.5, 2); this.scene.add(dir);
+      const fill = new THREE.DirectionalLight(0x4466ff, 0.35);
+      fill.position.set(-2, 0.5, 1); this.scene.add(fill);
+      const rim = new THREE.DirectionalLight(0x223388, 0.25);
+      rim.position.set(0, -2, -1); this.scene.add(rim);
+      this.geo = buildD10Geometry();
+      this.mat = new THREE.MeshPhongMaterial({ color: 0x1e3a8a, specular: 0x6688ff, shininess: 80, flatShading: true });
+      this.mesh = new THREE.Mesh(this.geo, this.mat);
+      this.scene.add(this.mesh);
+      this.canvas = this.renderer.domElement;
+    }
+    render(targetCanvas, digit, rolling, spinQ) {
+      this.mesh.quaternion.copy(rolling && spinQ ? spinQ : rotationForDigit(digit));
+      this.renderer.render(this.scene, this.camera);
+      const tctx = targetCanvas.getContext('2d');
+      tctx.clearRect(0, 0, DIE_SIZE, DIE_SIZE);
+      tctx.drawImage(this.renderer.domElement, 0, 0);
+      if (!rolling) {
+        const fsz = Math.round(DIE_SIZE * 0.28);
+        tctx.save();
+        tctx.font = `700 ${fsz}px sans-serif`;
+        tctx.textAlign = 'center'; tctx.textBaseline = 'middle';
+        tctx.fillStyle = '#ffffff';
+        tctx.shadowColor = 'rgba(0,0,40,0.7)'; tctx.shadowBlur = 6;
+        tctx.fillText(String(digit), DIE_SIZE * 0.5, DIE_SIZE * 0.5);
+        if (digit === 6 || digit === 9) {
+          const tw = tctx.measureText(String(digit)).width * 0.46;
+          tctx.beginPath();
+          tctx.moveTo(DIE_SIZE * 0.5 - tw, DIE_SIZE * 0.5 + fsz * 0.44);
+          tctx.lineTo(DIE_SIZE * 0.5 + tw, DIE_SIZE * 0.5 + fsz * 0.44);
+          tctx.strokeStyle = 'rgba(255,255,255,0.9)'; tctx.lineWidth = 2; tctx.stroke();
+        }
+        tctx.restore();
+      }
+    }
+  }
+
+  let DR = null;
+  let dieCanvases = [], animating = false, rafId = null, animTimer = null;
+
+  function randSpinQ() {
+    const q = new THREE.Quaternion();
+    q.setFromAxisAngle(new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(), Math.random() * Math.PI * 2);
+    return q;
+  }
+  function randSpinV() {
+    const q = new THREE.Quaternion();
+    q.setFromAxisAngle(new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize(), 0.08 + Math.random() * 0.12);
+    return q;
+  }
+  function startAnim() { animating = true; if (!rafId) rafId = requestAnimationFrame(animLoop); }
+  function stopAnim() { animating = false; }
+  function animLoop() {
+    if (!animating) { rafId = null; return; }
+    dieCanvases.forEach(d => { if (d.rolling) { d.spinQ.multiply(d.spinV); } DR.render(d.canvas, d.digit, d.rolling, d.spinQ); });
+    rafId = requestAnimationFrame(animLoop);
+  }
+
+  // ── Game State ─────────────────────────────────────────────────────────────
+
+  let gameState = {};
+
+  // Setup option buttons
+  document.querySelectorAll('.opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const parent = btn.closest('.opts');
+      parent.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+    });
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    const objEl = document.querySelector('[data-obj].sel');
+    const digEl = document.querySelector('[data-digits].sel');
+    const plEl = document.querySelector('[data-players].sel');
+    if (!objEl || !digEl || !plEl) { alert('Please select all options.'); return; }
+    const objective = objEl.dataset.obj;
+    const digits = parseInt(digEl.dataset.digits);
+    const players = parseInt(plEl.dataset.players);
+    startGame(objective, digits, players);
+  });
+
+  document.getElementById('newGameBtn').addEventListener('click', () => {
+    document.getElementById('gameScreen').classList.remove('active');
+    document.getElementById('setupScreen').classList.add('active');
+  });
+
+  document.getElementById('rollBtn').addEventListener('click', rollDice);
+
+  document.getElementById('histResetBtn').addEventListener('click', () => {
+    gameState.history = [];
+    renderHistory();
+  });
+
+  function startGame(objective, digits, players) {
+    gameState = {
+      objective,
+      digits,
+      players,
+      currentPlayer: 1,          // which player is placing right now (2-player)
+      lastRolledVals: null,       // shared roll values for both players
+      slots: new Array(digits).fill(null),      // player 1 slots
+      slots2: new Array(digits).fill(null),     // player 2 slots
+      pendingDie: null,
+      pendingDieCanvas: null,
+      history: [],
+      rollsLeft: digits,
+      done: false,
+      p1Done: false,
+      p2Done: false,
+    };
+
+    document.getElementById('gameTitle').textContent =
+      objective === 'largest' ? '🔺 Make the Largest Number' : '🔻 Make the Smallest Number';
+    document.getElementById('gameMeta').textContent =
+      `${digits} digit slots · ${digits} rolls remaining`;
+    document.getElementById('rollCount').value = 1;
+    document.getElementById('rollCount').max = digits;
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('diceTray').innerHTML =
+      '<span style="font-size:13px;color:#a0b0d0">Press Roll to throw your dice</span>';
+if (!DR) DR = new DieRenderer();
+    document.getElementById('assignPanel').textContent =
+      players === 2 ? '👤 Player 1 goes first — choose how many dice to roll, then press Roll!' : 'Choose how many dice to roll, then press Roll!';
+
+    // Show/hide player tabs
+    const tabs = document.getElementById('playerTabs');
+    if (players === 2) {
+      tabs.style.display = 'flex';
+      setActiveTab(1);
+    } else {
+      tabs.style.display = 'none';
+    }
+
+    document.getElementById('rollCount').addEventListener('input', updateRollBtn);
+    updateRollBtn();
+    renderSlots();
+    renderHistory();
+
+    document.getElementById('setupScreen').classList.remove('active');
+    document.getElementById('gameScreen').classList.add('active');
+  }
+
+  function setActiveTab(player) {
+    document.getElementById('tab1').className = 'player-tab' + (player === 1 ? ' active' : '');
+    document.getElementById('tab2').className = 'player-tab p2' + (player === 2 ? ' active' : '');
+  }
+
+  function currentSlots() {
+    return gameState.currentPlayer === 2 ? gameState.slots2 : gameState.slots;
+  }
+
+  function renderSlots() {
+    if (gameState.players === 2) {
+      document.getElementById('slotsRow').style.display = 'none';
+      document.getElementById('slotsDouble').style.display = 'flex';
+      document.getElementById('slotsLabel').style.display = 'none';
+      renderSlotsInto('slotsRow1', gameState.slots, gameState.currentPlayer === 1);
+      renderSlotsInto('slotsRow2', gameState.slots2, gameState.currentPlayer === 2);
+    } else {
+      document.getElementById('slotsRow').style.display = 'flex';
+      document.getElementById('slotsDouble').style.display = 'none';
+      document.getElementById('slotsLabel').style.display = 'block';
+      renderSlotsInto('slotsRow', gameState.slots, true);
+    }
+
+    const slots = currentSlots();
+    const filled = slots.filter(v => v !== null).length;
+    document.getElementById('gameMeta').textContent =
+      `${gameState.digits} digit slots · ${gameState.rollsLeft} rolls remaining · ${filled} placed` +
+      (gameState.players === 2 ? ` · Player ${gameState.currentPlayer}'s turn` : '');
+    document.getElementById('rollCount').max = slots.filter(v => v === null).length;
+  }
+
+  function renderSlotsInto(rowId, slots, isActive) {
+    const row = document.getElementById(rowId);
+    row.innerHTML = '';
+    slots.forEach((val, i) => {
+      const slot = document.createElement('div');
+      if (val !== null) {
+        slot.className = 'slot filled';
+        slot.innerHTML = `<span class="slot-digit">${val}</span><span class="slot-pos">${ordinal(i + 1)}</span>`;
+      } else if (isActive && gameState.pendingDie !== null) {
+        const isBlocked = i === 0 && gameState.pendingDie === 0;
+        if (isBlocked) {
+          slot.className = 'slot';
+          slot.innerHTML = `<span class="slot-empty-icon">·</span><span class="slot-pos">${ordinal(i + 1)}</span>`;
+        } else {
+          slot.className = 'slot clickable';
+          slot.innerHTML = `<span class="slot-empty-icon">＋</span><span class="slot-pos">${ordinal(i + 1)}</span>`;
+          slot.addEventListener('click', () => assignToSlot(i));
+        }
+      } else {
+        slot.className = 'slot';
+        slot.innerHTML = `<span class="slot-empty-icon">·</span><span class="slot-pos">${ordinal(i + 1)}</span>`;
+      }
+      row.appendChild(slot);
+    });
+  }
+
+  function updateRollBtn() {
+    const slots = currentSlots();
+    const emptySlots = slots.filter(v => v === null).length;
+    const count = parseInt(document.getElementById('rollCount').value) || 1;
+    document.getElementById('rollCount').max = emptySlots;
+    document.getElementById('rollBtn').disabled = gameState.done || gameState.pendingDie !== null || count > emptySlots;
+  }
+
+  function rollDice() {
+    if (gameState.done) return;
+    if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+
+    const count = parseInt(document.getElementById('rollCount').value);
+    const finalVals = Array.from({ length: count }, () => Math.floor(Math.random() * 10));
+
+    // In 2-player mode, store the roll so P2 reuses the same values
+    if (gameState.players === 2 && gameState.currentPlayer === 1) {
+      gameState.lastRolledVals = finalVals;
+    }
+
+    gameState.history.unshift({ rolls: finalVals, player: gameState.currentPlayer });
+    renderHistory();
+
+    document.getElementById('rollBtn').disabled = true;
+    gameState.rollsLeft -= count;
+    gameState.pendingDie = null;
+
+    stopAnim();
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    dieCanvases = [];
+    const tray = document.getElementById('diceTray');
+    tray.innerHTML = '';
+
+    finalVals.forEach((val, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'die-slot';
+      const canvas = document.createElement('canvas');
+      canvas.width = DIE_SIZE; canvas.height = DIE_SIZE;
+      const lbl = document.createElement('div');
+      lbl.className = 'die-val-lbl';
+      lbl.textContent = `Die ${i + 1}`;
+      wrap.appendChild(canvas); wrap.appendChild(lbl);
+      tray.appendChild(wrap);
+      dieCanvases.push({ canvas, digit: val, rolling: true, spinQ: randSpinQ(), spinV: randSpinV(), selected: false, assigned: false });
+    });
+
+    startAnim();
+
+    let elapsed = 0;
+    function settle() {
+      dieCanvases.forEach(d => { d.spinV.slerp(new THREE.Quaternion(), 0.18); });
+      elapsed += 30;
+      if (elapsed < 400) {
+        animTimer = setTimeout(settle, 30);
+      } else {
+        stopAnim();
+        dieCanvases.forEach(d => { d.rolling = false; DR.render(d.canvas, d.digit, false, null); });
+
+        dieCanvases.forEach((d, i) => {
+          d.canvas.style.cursor = 'pointer';
+          d.canvas.addEventListener('click', () => selectDie(finalVals[i], d.canvas));
+        });
+
+        document.getElementById('assignPanel').textContent =
+          `Rolled: ${finalVals.join(', ')} — click a die to select it, then click a slot to place it.`;
+        renderSlots();
+      }
+    }
+    animTimer = setTimeout(() => { elapsed = 0; settle(); }, 1400);
+  }
+
+    function selectDie(val, canvas) {
+    if (gameState.players === 2 && gameState.currentPlayer === 2) return; // P2 can't pick dice
+    dieCanvases.forEach(d => { if (!d.assigned) d.canvas.style.outline = ''; });
+    canvas.style.outline = '3px solid #7090f0';
+    gameState.pendingDie = val;
+    gameState.lastPendingDie = val; // remember for P2
+    gameState.pendingDieCanvas = canvas;
+    document.getElementById('assignPanel').innerHTML =
+      `Selected die: <b>${val}</b> — now click an empty slot to place it.`;
+    renderSlots();
+  }
+
+  function assignToSlot(i) {
+    if (gameState.pendingDie === null) return;
+    if (i === 0 && gameState.pendingDie === 0) {
+      document.getElementById('assignPanel').textContent =
+        '0 cannot be placed in the first slot. Choose a different slot.';
+      return;
+    }
+
+    const slots = currentSlots();
+    slots[i] = gameState.pendingDie;
+
+    const selected = dieCanvases.find(d => d.canvas.style.outline !== '' && !d.assigned);
+    if (selected) { selected.assigned = true; selected.canvas.style.outline = '3px solid #44cc88'; }
+
+    if (gameState.players === 2) {
+      if (gameState.currentPlayer === 1) {
+        // P1 just placed — now P2 places the same value
+        gameState.currentPlayer = 2;
+        setActiveTab(2);
+        gameState.pendingDie = gameState.lastPendingDie; // same die value
+        document.getElementById('assignPanel').innerHTML =
+          `👥 Player 2: place the same die value <b>${gameState.lastPendingDie}</b> into one of your slots.`;
+        renderSlots();
+        return;
+      } else {
+        // P2 just placed — check if all dice from this roll are fully placed by both
+        gameState.currentPlayer = 1;
+        setActiveTab(1);
+        gameState.pendingDie = null;
+
+        // Check if all dice in tray are assigned (both players done with this roll)
+        const allAssigned = dieCanvases.every(d => d.assigned);
+        const p1Full = gameState.slots.filter(v => v !== null).length === gameState.digits;
+        const p2Full = gameState.slots2.filter(v => v !== null).length === gameState.digits;
+
+        if (p1Full && p2Full) {
+          gameState.done = true;
+          document.getElementById('rollBtn').disabled = true;
+          renderSlots();
+          showResult();
+          return;
+        }
+
+        if (allAssigned) {
+          if (gameState.rollsLeft > 0) {
+            document.getElementById('rollBtn').disabled = false;
+            document.getElementById('assignPanel').textContent =
+              `👤 Player 1: roll the next die!`;
+          } else {
+            gameState.done = true;
+            renderSlots();
+            showResult();
+          }
+        } else {
+          // More dice from this roll still to place
+          document.getElementById('assignPanel').textContent =
+            `👤 Player 1: select the next die to place.`;
+        }
+        renderSlots();
+        return;
+      }
+    }
+
+    // ── Solo mode below ──
+    gameState.pendingDie = null;
+    const filled = slots.filter(v => v !== null).length;
+    const allDiceUsed = dieCanvases.every(d => d.assigned);
+
+    if (filled === gameState.digits) {
+      gameState.done = true;
+      document.getElementById('rollBtn').disabled = true;
+      document.getElementById('assignPanel').textContent = 'All slots filled!';
+      renderSlots();
+      showResult();
+    } else if (allDiceUsed) {
+      if (gameState.rollsLeft > 0) {
+        document.getElementById('rollBtn').disabled = false;
+        document.getElementById('assignPanel').textContent =
+          `Placed ${slots[i]} in slot ${i + 1}. Roll again!`;
+        renderSlots();
+      } else {
+        gameState.done = true;
+        document.getElementById('assignPanel').textContent = 'No rolls left!';
+        renderSlots();
+        showResult();
+      }
+    } else {
+      document.getElementById('assignPanel').textContent =
+        `Placed ${slots[i]} in slot ${i + 1}. Select another die.`;
+      renderSlots();
+    }
+  }
+  
+  function showResult() {
+    function bestFor(slots) {
+      const rolledDigits = slots.filter(v => v !== null);
+      function permutations(arr) {
+        if (arr.length <= 1) return [arr];
+        return arr.flatMap((val, i) => {
+          const rest = [...arr.slice(0, i), ...arr.slice(i + 1)];
+          return permutations(rest).map(p => [val, ...p]);
+        });
+      }
+      const nums = permutations(rolledDigits).filter(p => p[0] !== 0).map(p => parseInt(p.join('')));
+      return gameState.objective === 'largest' ? Math.max(...nums) : Math.min(...nums);
+    }
+
+    const p1Num = parseInt(gameState.slots.join(''));
+    const best1 = bestFor(gameState.slots);
+
+    const card = document.getElementById('resultCard');
+    card.style.display = 'block';
+
+    if (gameState.players === 1) {
+      const diff = Math.abs(p1Num - best1);
+      card.innerHTML = `
+        <h3>Game Over!</h3>
+        <div class="result-numbers">
+          <div class="result-num"><div class="lbl">Your number</div><div class="val player">${p1Num}</div></div>
+          <div class="result-num"><div class="lbl">Best possible</div><div class="val best">${best1}</div></div>
+        </div>
+        <div class="result-diff">You were <span class="highlight">${diff === 0 ? 'spot on! 🎉' : diff + ' away'}</span></div>
+        <button class="play-again-btn" onclick="document.getElementById('newGameBtn').click()">↩ Play Again</button>
+      `;
+    } else {
+      const p2Num = parseInt(gameState.slots2.join(''));
+      const best2 = bestFor(gameState.slots2);
+      const diff1 = Math.abs(p1Num - best1);
+      const diff2 = Math.abs(p2Num - best2);
+
+      let winnerHTML;
+      if (gameState.objective === 'largest') {
+        if (p1Num > p2Num) winnerHTML = '🏆 Player 1 wins!';
+        else if (p2Num > p1Num) winnerHTML = '🏆 Player 2 wins!';
+        else winnerHTML = "🤝 It's a tie!";
+      } else {
+        if (p1Num < p2Num) winnerHTML = '🏆 Player 1 wins!';
+        else if (p2Num < p1Num) winnerHTML = '🏆 Player 2 wins!';
+        else winnerHTML = "🤝 It's a tie!";
+      }
+
+      card.innerHTML = `
+        <h3>Game Over!</h3>
+        <div class="result-winner">${winnerHTML}</div>
+        <div class="result-numbers">
+          <div class="result-num">
+            <div class="lbl">👤 Player 1</div>
+            <div class="val player">${p1Num}</div>
+            <div style="font-size:11px;color:#7a8ab0;margin-top:4px">${diff1 === 0 ? 'Perfect! 🎉' : diff1 + ' from best'}</div>
+          </div>
+          <div class="result-num">
+            <div class="lbl">👥 Player 2</div>
+            <div class="val" style="color:#e85d04">${p2Num}</div>
+            <div style="font-size:11px;color:#7a8ab0;margin-top:4px">${diff2 === 0 ? 'Perfect! 🎉' : diff2 + ' from best'}</div>
+          </div>
+        </div>
+        <button class="play-again-btn" onclick="document.getElementById('newGameBtn').click()">↩ Play Again</button>
+      `;
+    }
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('histList');
+    if (!gameState.history || gameState.history.length === 0) {
+      list.innerHTML = '<div class="hist-empty">No rolls yet</div>';
+      return;
+    }
+    list.innerHTML = gameState.history.map((h, i) => `
+      <div class="hist-item">
+        <span class="hist-num">#${gameState.history.length - i}</span>
+        <span class="hist-dice">${gameState.players === 2 ? (h.player === 1 ? '👤' : '👥') : '🎲'} ${h.rolls.join(', ')}</span>
+      </div>
+    `).join('');
+  }
+
+  function ordinal(n) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+</script>
+
+
+</body>
+</html>
